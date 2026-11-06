@@ -74,7 +74,7 @@ if ($Action -eq 'install') {
     }
     if ($regles) { [IO.File]::WriteAllText((Join-Path $mod 'regles.txt'), $regles) }
     # Check by reading back.
-    foreach ($f in 'Scripts\main.lua', 'enabled.txt') {
+    foreach ($f in 'Scripts\main.lua', 'enabled.txt', 'avatar_fenetres.dll') {
         if (-not (Test-Path (Join-Path $mod $f))) { Write-Host "ERROR: missing $f"; exit 1 }
     }
     foreach ($f in (Join-Path $win64 'dwmapi.dll'), (Join-Path $ue4ss 'UE4SS.dll')) {

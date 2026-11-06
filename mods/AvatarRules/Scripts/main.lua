@@ -89,8 +89,7 @@ local ACTIVITES = {
 }
 local NOMBRE_PROFILS = 10
 local NOMBRE_DECORS = 5
-local DOSSIER_REAL_SCREEN = DOSSIER:gsub("AvatarRules/$", "EcranReel/")
-local APPLIS = { connues = false, ouvertes = {}, liste = {}, prochain = 0 }
+local APPLIS = { connues = false, ouvertes = {}, liste = {}, ecrans = {}, prochain = 0 }
 
 -- ---------------------------------------------------------------- the player's rules
 -- A rule is true when at least one of its conditions is true ("or"). Inside one condition, everything must be true ("and").
@@ -100,7 +99,7 @@ local REGLES = {}
 local function rempli(x) return x ~= nil and x ~= "" end
 
 local function nouvelle_condition()
-    return { de = "8:00", a = "12:00", jours = "tous", annee = "", pomodoro = "", musique = "", appli = "" }
+    return { de = "8:00", a = "12:00", jours = "tous", annee = "", pomodoro = "", musique = "", appli = "", plan = "", ecran = "" }
 end
 
 local function nouvelle_etape()
@@ -119,7 +118,7 @@ local function nouvelle_regle()
 end
 
 local CHAMPS_REGLE = { "actif", "inverse", "fin", "en_cours", "avant_profil", "avant_rang", "avant_decor", "avant_musique", "pose_profil", "pose_rang", "pose_decor", "pose_musique" }
-local CHAMPS_CONDITION = { "de", "a", "jours", "annee", "pomodoro", "musique", "appli" }
+local CHAMPS_CONDITION = { "de", "a", "jours", "annee", "pomodoro", "musique", "appli", "plan", "ecran" }
 local CHAMPS_ETAPE = { "attente", "profil", "endroit", "activite", "decor", "musique" }
 
 local function lire_regles()
@@ -553,6 +552,24 @@ do
         for cle, valeur in pairs(textes) do TEXTES[code][cle] = valeur end
     end
 end
+-- Where an application is: in front on its screen, or behind, and which screen.
+do
+    local PLANS = {
+        en = { plan_t = "Application is", plan_d = "In front on its screen, or behind other windows or minimized", plan_ouverte = "Open", plan_devant = "In front", plan_derriere = "In the background", ecran_t = "On screen", ecran_d = "The screen of that application's window", ecran_tous = "Any screen", ecran_nom = "Screen %s (%s)", appli_sans_d = "The file avatar_fenetres.dll is missing or blocked by an antivirus" },
+        fr = { plan_t = "L'application est", plan_d = "Devant sur son écran, ou derrière d'autres fenêtres, ou réduite", plan_ouverte = "Ouverte", plan_devant = "Au premier plan", plan_derriere = "En arrière-plan", ecran_t = "Sur l'écran", ecran_d = "L'écran de la fenêtre de cette application", ecran_tous = "N'importe quel écran", ecran_nom = "Écran %s (%s)", appli_sans_d = "Le fichier avatar_fenetres.dll manque ou est bloqué par un antivirus" },
+        it = { plan_t = "L'applicazione è", plan_d = "Davanti sul suo schermo, oppure dietro altre finestre o ridotta", plan_ouverte = "Aperta", plan_devant = "In primo piano", plan_derriere = "In secondo piano", ecran_t = "Sullo schermo", ecran_d = "Lo schermo della finestra di questa applicazione", ecran_tous = "Qualsiasi schermo", ecran_nom = "Schermo %s (%s)", appli_sans_d = "Il file avatar_fenetres.dll manca o è bloccato da un antivirus" },
+        de = { plan_t = "Die Anwendung ist", plan_d = "Vorne auf ihrem Bildschirm, oder hinter anderen Fenstern oder minimiert", plan_ouverte = "Geöffnet", plan_devant = "Im Vordergrund", plan_derriere = "Im Hintergrund", ecran_t = "Auf Bildschirm", ecran_d = "Der Bildschirm des Fensters dieser Anwendung", ecran_tous = "Beliebiger Bildschirm", ecran_nom = "Bildschirm %s (%s)", appli_sans_d = "Die Datei avatar_fenetres.dll fehlt oder wird von einem Virenschutz blockiert" },
+        es = { plan_t = "La aplicación está", plan_d = "Delante en su pantalla, o detrás de otras ventanas o minimizada", plan_ouverte = "Abierta", plan_devant = "En primer plano", plan_derriere = "En segundo plano", ecran_t = "En la pantalla", ecran_d = "La pantalla de la ventana de esta aplicación", ecran_tous = "Cualquier pantalla", ecran_nom = "Pantalla %s (%s)", appli_sans_d = "Falta el archivo avatar_fenetres.dll o lo bloquea un antivirus" },
+        pt = { plan_t = "O aplicativo está", plan_d = "Na frente em sua tela, ou atrás de outras janelas ou minimizado", plan_ouverte = "Aberto", plan_devant = "Em primeiro plano", plan_derriere = "Em segundo plano", ecran_t = "Na tela", ecran_d = "A tela da janela deste aplicativo", ecran_tous = "Qualquer tela", ecran_nom = "Tela %s (%s)", appli_sans_d = "O arquivo avatar_fenetres.dll está faltando ou foi bloqueado por um antivírus" },
+        ja = { plan_t = "アプリの状態", plan_d = "その画面で最前面、または他のウィンドウの後ろや最小化", plan_ouverte = "開いている", plan_devant = "最前面", plan_derriere = "背面", ecran_t = "画面", ecran_d = "このアプリのウィンドウがある画面", ecran_tous = "すべての画面", ecran_nom = "画面 %s (%s)", appli_sans_d = "avatar_fenetres.dll がないか、ウイルス対策ソフトにブロックされています" },
+        zh = { plan_t = "应用状态", plan_d = "在其屏幕的最前面，或在其他窗口后面或已最小化", plan_ouverte = "已打开", plan_devant = "在前台", plan_derriere = "在后台", ecran_t = "屏幕", ecran_d = "此应用窗口所在的屏幕", ecran_tous = "任意屏幕", ecran_nom = "屏幕 %s (%s)", appli_sans_d = "文件 avatar_fenetres.dll 缺失或被杀毒软件阻止" },
+        ko = { plan_t = "앱 상태", plan_d = "해당 화면의 맨 앞, 또는 다른 창 뒤나 최소화", plan_ouverte = "열림", plan_devant = "앞에 있음", plan_derriere = "뒤에 있음", ecran_t = "화면", ecran_d = "이 앱의 창이 있는 화면", ecran_tous = "모든 화면", ecran_nom = "화면 %s (%s)", appli_sans_d = "avatar_fenetres.dll 파일이 없거나 백신 프로그램이 차단했습니다" },
+        ru = { plan_t = "Приложение", plan_d = "Впереди на своём экране, либо за другими окнами или свёрнуто", plan_ouverte = "Открыто", plan_devant = "На переднем плане", plan_derriere = "На заднем плане", ecran_t = "На экране", ecran_d = "Экран окна этого приложения", ecran_tous = "Любой экран", ecran_nom = "Экран %s (%s)", appli_sans_d = "Файл avatar_fenetres.dll отсутствует или заблокирован антивирусом" },
+    }
+    for code, textes in pairs(PLANS) do
+        for cle, valeur in pairs(textes) do TEXTES[code][cle] = valeur end
+    end
+end
 -- A language missing a text falls back on English, one text at a time.
 for code, table_langue in pairs(TEXTES) do
     if code ~= "en" then setmetatable(table_langue, { __index = TEXTES.en }) end
@@ -645,6 +662,8 @@ local function poser_textes()
     regler_textes(l.activite, t.activite_t, t.activite_d)
     regler_textes(l.condition, t.condition_t, t.condition_d)
     regler_textes(l.appli, t.appli_t, t.appli_d)
+    regler_textes(l.appli_plan, t.plan_t, t.plan_d)
+    regler_textes(l.appli_ecran, t.ecran_t, t.ecran_d)
     regler_textes(l.retirer_c, t.retirer_c_t, t.retirer_c_d)
     regler_textes(l.etape, t.etape_t, t.etape_d)
     regler_textes(l.attente, t.attente_t, t.attente_d)
@@ -708,7 +727,7 @@ local function creer_onglet(p)
     MENU.page = page
 
     local l = MENU.lignes
-    for _, nom_ligne in ipairs({ "regle", "actif", "condition", "de", "a", "jours", "appli", "annee", "pomodoro", "musique_si", "retirer_c", "etape", "attente", "tenue", "endroit", "activite", "decor", "musique", "retirer_e", "essayer", "avance", "sens", "fin", "s_etape", "s_attente", "s_tenue", "s_endroit", "s_activite", "s_decor", "s_musique", "s_retirer", "suppr" }) do
+    for _, nom_ligne in ipairs({ "regle", "actif", "condition", "de", "a", "jours", "appli", "appli_plan", "appli_ecran", "annee", "pomodoro", "musique_si", "retirer_c", "etape", "attente", "tenue", "endroit", "activite", "decor", "musique", "retirer_e", "essayer", "avance", "sens", "fin", "s_etape", "s_attente", "s_tenue", "s_endroit", "s_activite", "s_decor", "s_musique", "s_retirer", "suppr" }) do
         l[nom_ligne] = creer_ligne(p, modele, section)
     end
     poser_textes()
@@ -894,6 +913,19 @@ local function paires_applis(actuelle)
     return p
 end
 
+local function paires_ecrans(actuel)
+    local t = MENU.texte
+    local p = { { t.ecran_tous, "" } }
+    local vu = false
+    for _, e in ipairs(APPLIS.ecrans) do
+        p[#p + 1] = { string.format(t.ecran_nom, e.numero, e.taille), e.numero }
+        if e.numero == actuel then vu = true end
+    end
+    -- A screen switched off for now stays chosen.
+    if rempli(actuel) and not vu then p[#p + 1] = { string.format(t.ecran_nom, actuel, "?"), actuel } end
+    return p
+end
+
 local function regle_avancee(r)
     if r == nil then return false end
     if r.inverse == "1" or r.fin == "avant" or #r.sinon > 0 then return true end
@@ -1027,7 +1059,7 @@ local function suivre_page()
     local avec = r ~= nil
     for _, nom in ipairs({ "actif", "condition", "de", "jours", "appli", "essayer", "avance", "suppr" }) do montrer(l[nom], avec) end
     if not avec then
-        for _, nom in ipairs({ "a", "annee", "pomodoro", "musique_si", "retirer_c", "sens", "fin" }) do montrer(l[nom], false) end
+        for _, nom in ipairs({ "a", "appli_plan", "appli_ecran", "annee", "pomodoro", "musique_si", "retirer_c", "sens", "fin" }) do montrer(l[nom], false) end
         suivre_etapes(l, nil, {}, "etape_choisie", NOMS_ALORS, false, t, false)
         suivre_etapes(l, nil, {}, "s_etape_choisie", NOMS_SINON, false, t, true)
         return
@@ -1053,7 +1085,15 @@ local function suivre_page()
     regler_options(l.a, heures(false), libelle_heure(rempli(c.a) and c.a or c.de))
     if ligne_fixe(l.jours, c, "jours", paires_jours()) then change = true end
     if ligne_fixe(l.appli, c, "appli", paires_applis(c.appli)) then change = true end
-    -- Without Real Screen there is no list of windows: the row says why it stays empty.
+    -- Where that application must be. Nothing to choose until an application is picked.
+    local avec_appli = rempli(c.appli)
+    montrer(l.appli_plan, avec_appli)
+    montrer(l.appli_ecran, avec_appli)
+    if avec_appli then
+        if ligne_fixe(l.appli_plan, c, "plan", { { t.plan_ouverte, "" }, { t.plan_devant, "devant" }, { t.plan_derriere, "derriere" } }) then change = true end
+        if ligne_fixe(l.appli_ecran, c, "ecran", paires_ecrans(c.ecran)) then change = true end
+    end
+    -- Without the DLL there is no list of windows: the row says why it stays empty.
     local sans = not APPLIS.connues
     if sans ~= MENU.appli_sans or MENU.appli_langue ~= MENU.langue then
         MENU.appli_sans, MENU.appli_langue = sans, MENU.langue
@@ -1223,7 +1263,16 @@ local function condition_simple_vraie(c, maintenant, jour, mois)
     if not (heure_vraie(c, maintenant) and jour_vrai(c, jour) and annee_vraie(c, mois)) then return false end
     if rempli(c.pomodoro) and etat_pomodoro() ~= c.pomodoro then return false end
     if rempli(c.musique) and (c.musique == "lecture") ~= musique_joue() then return false end
-    if rempli(c.appli) and not APPLIS.ouvertes[c.appli] then return false end
+    if rempli(c.appli) then
+        local trouvee = false
+        for _, f in ipairs(APPLIS.ouvertes[c.appli] or {}) do
+            local bon_ecran = not rempli(c.ecran) or f.ecran == c.ecran
+            -- In the background: behind another window on its screen, or minimized.
+            local bon_plan = not rempli(c.plan) or (c.plan == "devant") == (f.etat == "devant")
+            if bon_ecran and bon_plan then trouvee = true end
+        end
+        if not trouvee then return false end
+    end
     return true
 end
 
@@ -1250,32 +1299,33 @@ local function regle_veut_applis()
     return false
 end
 
--- The list of open windows comes from Real Screen, when it is there: it needs no program of its own.
--- A window of Lua could not start one without a console flashing in front of whatever the player is doing.
--- Only the program names are read, never the window titles. Nothing is asked when no rule needs it.
+-- The list of open windows comes from avatar_fenetres.dll, on request. A rule that needs nothing costs nothing.
+-- Only program names, screens and whether a window is in front. Never a title.
 local function demander_applis()
     local t = os.clock()
     if t < APPLIS.prochain then return end
     if not (regle_veut_applis() or MENU.page_ouverte or (PONT and ESSAI.applis)) then return end
-    APPLIS.prochain = t + 3
+    APPLIS.prochain = t + 2
     if PONT and ESSAI.applis then
+        -- "name" or "name:screen:state"
         APPLIS.connues = true
-        APPLIS.ouvertes = {}
-        APPLIS.liste = {}
-        for _, nom in ipairs(ESSAI.applis) do
-            APPLIS.ouvertes[nom] = true
-            APPLIS.liste[#APPLIS.liste + 1] = nom
+        APPLIS.ouvertes, APPLIS.liste = {}, {}
+        for _, entree in ipairs(ESSAI.applis) do
+            local nom, ecran, etat = entree:match("^([^:]+):?([^:]*):?([^:]*)$")
+            if not APPLIS.ouvertes[nom] then
+                APPLIS.ouvertes[nom] = {}
+                APPLIS.liste[#APPLIS.liste + 1] = nom
+            end
+            table.insert(APPLIS.ouvertes[nom], { ecran = ecran ~= "" and ecran or "1", etat = etat ~= "" and etat or "devant" })
         end
         return
     end
-    local demande = DOSSIER_REAL_SCREEN .. "lister.txt"
-    local present = io.open(DOSSIER_REAL_SCREEN .. "pret.txt", "r")
-    if not present then
+    if not APPLIS.module then
         APPLIS.connues = false
         return
     end
-    present:close()
-    -- The request is still there from last time: Real Screen is not answering.
+    local demande = DOSSIER .. "demande_fenetres.txt"
+    -- The request is still there from last time: the DLL is not answering.
     local encore = io.open(demande, "r")
     if encore then
         encore:close()
@@ -1284,26 +1334,26 @@ local function demander_applis()
         return
     end
     APPLIS.sans_reponse = 0
-    -- The list on disk may be an old one until Real Screen has answered a first request.
-    if not APPLIS.demandee then
-        APPLIS.demandee = true
-        local premiere = io.open(demande, "w")
-        if premiere then premiere:close() end
-        return
-    end
-    local f = io.open(DOSSIER_REAL_SCREEN .. "fenetres.txt", "r")
+    local f = io.open(DOSSIER .. "fenetres.txt", "r")
     if f then
-        local ouvertes, liste = {}, {}
+        local ouvertes, liste, ecrans = {}, {}, {}
         for ligne in f:lines() do
-            local exe = ligne:match("^F\t([^\t]*)\t")
-            if exe and exe ~= "" and not exe:find("^SpiritCity") and not ouvertes[exe] then
-                ouvertes[exe] = true
-                liste[#liste + 1] = exe
+            local numero, taille = ligne:match("^E\t([^\t]*)\t(.*)$")
+            if numero then ecrans[#ecrans + 1] = { numero = numero, taille = taille } end
+            local exe, ecran, etat = ligne:match("^A\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+            if exe and exe ~= "" then
+                if not ouvertes[exe] then
+                    ouvertes[exe] = {}
+                    -- The game itself still counts for who is in front of what, but it is not something to pick.
+                    if not exe:find("^SpiritCity") then liste[#liste + 1] = exe end
+                end
+                table.insert(ouvertes[exe], { ecran = ecran, etat = etat })
             end
         end
         f:close()
         table.sort(liste, function(a, b) return a:lower() < b:lower() end)
-        APPLIS.ouvertes, APPLIS.liste, APPLIS.connues = ouvertes, liste, true
+        table.sort(ecrans, function(a, b) return (tonumber(a.numero) or 0) < (tonumber(b.numero) or 0) end)
+        APPLIS.ouvertes, APPLIS.liste, APPLIS.ecrans, APPLIS.connues = ouvertes, liste, ecrans, true
     end
     local d = io.open(demande, "w")
     if d then d:close() end
@@ -1669,6 +1719,11 @@ end
 
 lire_regles()
 journal("mod charge, " .. #REGLES .. " regle(s)")
+do
+    local ok, err = package.loadlib(DOSSIER .. "avatar_fenetres.dll", "*")
+    APPLIS.module = ok and true or false
+    journal("liste des fenetres : " .. (APPLIS.module and "prete" or ("absente : " .. tostring(err))))
+end
 
 local TICK = "/Game/Core_Sessions/Core/BP_CameraPawn.BP_CameraPawn_C:ReceiveTick"
 local prochain_menu, prochaine_regle, prochain_pont, prochain_pas, ACCROCHE = 0, 3, 0, 0, false
