@@ -2,7 +2,7 @@
 
 A mod for Spirit City: Lofi Sessions: rules for your avatar, in a new tab of the game's options. Un mod pour Spirit City: Lofi Sessions : des règles pour votre avatar, dans un nouvel onglet des options du jeu.
 
-**[Download / Télécharger](https://github.com/Demonwal51/AvatarRules/releases/latest)**
+**[Download / Télécharger](https://github.com/Demonwal51/AvatarRules/releases/latest)** · **[Nexus Mods](https://www.nexusmods.com/spiritcitylofisessions/mods/20)**
 
 ![The avatar doing what a rule asked](images/screen.png)
 
