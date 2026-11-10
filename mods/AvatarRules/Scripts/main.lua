@@ -103,7 +103,7 @@ local function nouvelle_condition()
 end
 
 local function nouvelle_etape()
-    return { attente = "0", profil = "", endroit = "", activite = "", decor = "", musique = "" }
+    return { attente = "0", profil = "", endroit = "", activite = "", decor = "", musique = "", moment = "" }
 end
 
 local function nouvelle_regle()
@@ -111,15 +111,15 @@ local function nouvelle_regle()
         actif = "1", inverse = "0",
         fin = "rien",  -- when it ends: rien (nothing) or avant (as it was before)
         -- Kept across a restart, so a rule that ends while the game is closed can still put things back.
-        en_cours = "0", avant_profil = "", avant_rang = "", avant_decor = "", avant_musique = "",
-        pose_profil = "", pose_rang = "", pose_decor = "", pose_musique = "",
+        en_cours = "0", avant_profil = "", avant_rang = "", avant_decor = "", avant_musique = "", avant_moment = "",
+        pose_profil = "", pose_rang = "", pose_decor = "", pose_musique = "", pose_moment = "",
         conditions = { nouvelle_condition() }, alors = { nouvelle_etape() }, sinon = {},
     }
 end
 
-local CHAMPS_REGLE = { "actif", "inverse", "fin", "en_cours", "avant_profil", "avant_rang", "avant_decor", "avant_musique", "pose_profil", "pose_rang", "pose_decor", "pose_musique" }
+local CHAMPS_REGLE = { "actif", "inverse", "fin", "en_cours", "avant_profil", "avant_rang", "avant_decor", "avant_musique", "avant_moment", "pose_profil", "pose_rang", "pose_decor", "pose_musique", "pose_moment" }
 local CHAMPS_CONDITION = { "de", "a", "jours", "annee", "pomodoro", "musique", "appli", "plan", "ecran" }
-local CHAMPS_ETAPE = { "attente", "profil", "endroit", "activite", "decor", "musique" }
+local CHAMPS_ETAPE = { "attente", "profil", "endroit", "activite", "decor", "musique", "moment" }
 
 local function lire_regles()
     local f = io.open(FICHIER_REGLES, "r")
@@ -201,6 +201,7 @@ local function hud() return objet_garde("UI_BedroomHUD_C") end
 local function gestion_lieu() return objet_garde("BP_LocationActivityManager_C") end
 local function gestion_tenue() return objet_garde("BP_AvatarCustomizationManager_C") end
 local function gestion_cartes() return objet_garde("BP_MapManager_C") end
+local function gestion_moment() return objet_garde("BP_TimeofDayManager_C") end
 
 -- The game's own ownership check. If it cannot answer, the place is not offered.
 local DLC_CONNUS = {}
@@ -229,7 +230,7 @@ local TEXTES = {
         de_t = "From", de_d = "The time the rule acts", a_t = "Until", a_d = "After this time the rule is ready again for the next day",
         tenue_t = "Then: outfit", tenue_d = "The outfit preset to wear", laisser = "No change", profil = "Preset %d",
         endroit_t = "Then: go to", endroit_d = "The place to go to", activite_t = "Then: do", activite_d = "The activity to do there",
-        avance_t = "Advanced functions", avance_d = "More conditions, decor, music, end of the rule, and else",
+        avance_t = "Advanced functions", avance_d = "More conditions, decor, music, time of day, end of the rule, and else",
         journee = "All day", jours_t = "Days", jours_d = "The days the rule can act", tous_jours = "Every day", semaine = "Monday to Friday", weekend = "Weekend",
         jour_noms = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" },
         essayer_t = "Try this rule", essayer_d = "Closes the options and does it now, whatever the conditions say", essayer_rien = "—", essayer_alors = "Try: then", essayer_sinon = "Try: else",
@@ -251,7 +252,7 @@ local TEXTES = {
         de_t = "À partir de", de_d = "L'heure où la règle agit", a_t = "Jusqu'à", a_d = "Après cette heure, la règle est de nouveau prête pour le lendemain",
         tenue_t = "Alors : tenue", tenue_d = "Le profil de tenue à mettre", laisser = "Ne pas changer", profil = "Profil %d",
         endroit_t = "Alors : aller à", endroit_d = "L'endroit où aller", activite_t = "Alors : faire", activite_d = "L'activité à y faire",
-        avance_t = "Fonctions avancées", avance_d = "Autres conditions, décor, musique, fin de la règle et sinon",
+        avance_t = "Fonctions avancées", avance_d = "Autres conditions, décor, musique, moment de la journée, fin de la règle et sinon",
         journee = "Toute la journée", jours_t = "Jours", jours_d = "Les jours où la règle peut agir", tous_jours = "Tous les jours", semaine = "Du lundi au vendredi", weekend = "Le week-end",
         jour_noms = { "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi" },
         essayer_t = "Essayer cette règle", essayer_d = "Ferme les options et le fait tout de suite, quelles que soient les conditions", essayer_rien = "—", essayer_alors = "Essayer : alors", essayer_sinon = "Essayer : sinon",
@@ -273,7 +274,7 @@ local TEXTES = {
         de_t = "Dalle", de_d = "L'ora in cui la regola agisce", a_t = "Fino alle", a_d = "Dopo quest'ora la regola è di nuovo pronta per il giorno dopo",
         tenue_t = "Allora: abito", tenue_d = "Il profilo d'abito da indossare", laisser = "Non cambiare", profil = "Profilo %d",
         endroit_t = "Allora: vai a", endroit_d = "Il luogo dove andare", activite_t = "Allora: fai", activite_d = "L'attività da fare lì",
-        avance_t = "Funzioni avanzate", avance_d = "Altre condizioni, arredamento, musica, fine della regola e altrimenti",
+        avance_t = "Funzioni avanzate", avance_d = "Altre condizioni, arredamento, musica, momento della giornata, fine della regola e altrimenti",
         journee = "Tutto il giorno", jours_t = "Giorni", jours_d = "I giorni in cui la regola può agire", tous_jours = "Tutti i giorni", semaine = "Da lunedì a venerdì", weekend = "Fine settimana",
         jour_noms = { "Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato" },
         essayer_t = "Prova questa regola", essayer_d = "Chiude le opzioni e lo fa subito, qualunque siano le condizioni", essayer_rien = "—", essayer_alors = "Prova: allora", essayer_sinon = "Prova: altrimenti",
@@ -295,7 +296,7 @@ local TEXTES = {
         de_t = "Ab", de_d = "Die Uhrzeit, zu der die Regel handelt", a_t = "Bis", a_d = "Nach dieser Uhrzeit ist die Regel für den nächsten Tag wieder bereit",
         tenue_t = "Dann: Outfit", tenue_d = "Das Outfit-Profil, das getragen wird", laisser = "Nicht ändern", profil = "Profil %d",
         endroit_t = "Dann: gehe zu", endroit_d = "Der Ort, an den es geht", activite_t = "Dann: mache", activite_d = "Die Aktivität an diesem Ort",
-        avance_t = "Erweiterte Funktionen", avance_d = "Weitere Bedingungen, Einrichtung, Musik, Ende der Regel und Sonst",
+        avance_t = "Erweiterte Funktionen", avance_d = "Weitere Bedingungen, Einrichtung, Musik, Tageszeit, Ende der Regel und Sonst",
         journee = "Ganzer Tag", jours_t = "Tage", jours_d = "Die Tage, an denen die Regel handeln kann", tous_jours = "Jeden Tag", semaine = "Montag bis Freitag", weekend = "Wochenende",
         jour_noms = { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag" },
         essayer_t = "Diese Regel testen", essayer_d = "Schließt die Optionen und führt sie sofort aus, egal was die Bedingungen sagen", essayer_rien = "—", essayer_alors = "Testen: dann", essayer_sinon = "Testen: sonst",
@@ -317,7 +318,7 @@ local TEXTES = {
         de_t = "Desde", de_d = "La hora en que actúa la regla", a_t = "Hasta", a_d = "Después de esta hora, la regla vuelve a estar lista para el día siguiente",
         tenue_t = "Entonces: ropa", tenue_d = "El perfil de ropa que se pone", laisser = "No cambiar", profil = "Perfil %d",
         endroit_t = "Entonces: ir a", endroit_d = "El lugar al que ir", activite_t = "Entonces: hacer", activite_d = "La actividad que hacer allí",
-        avance_t = "Funciones avanzadas", avance_d = "Otras condiciones, decoración, música, fin de la regla y si no",
+        avance_t = "Funciones avanzadas", avance_d = "Otras condiciones, decoración, música, momento del día, fin de la regla y si no",
         journee = "Todo el día", jours_t = "Días", jours_d = "Los días en que la regla puede actuar", tous_jours = "Todos los días", semaine = "De lunes a viernes", weekend = "Fin de semana",
         jour_noms = { "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" },
         essayer_t = "Probar esta regla", essayer_d = "Cierra las opciones y lo hace ahora, digan lo que digan las condiciones", essayer_rien = "—", essayer_alors = "Probar: entonces", essayer_sinon = "Probar: si no",
@@ -339,7 +340,7 @@ local TEXTES = {
         de_t = "A partir de", de_d = "O horário em que a regra age", a_t = "Até", a_d = "Depois deste horário, a regra fica pronta de novo para o dia seguinte",
         tenue_t = "Então: roupa", tenue_d = "O perfil de roupa a vestir", laisser = "Não mudar", profil = "Perfil %d",
         endroit_t = "Então: ir para", endroit_d = "O local para onde ir", activite_t = "Então: fazer", activite_d = "A atividade a fazer lá",
-        avance_t = "Funções avançadas", avance_d = "Outras condições, decoração, música, fim da regra e senão",
+        avance_t = "Funções avançadas", avance_d = "Outras condições, decoração, música, momento do dia, fim da regra e senão",
         journee = "O dia todo", jours_t = "Dias", jours_d = "Os dias em que a regra pode agir", tous_jours = "Todos os dias", semaine = "De segunda a sexta", weekend = "Fim de semana",
         jour_noms = { "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado" },
         essayer_t = "Testar esta regra", essayer_d = "Fecha as opções e faz agora, sejam quais forem as condições", essayer_rien = "—", essayer_alors = "Testar: então", essayer_sinon = "Testar: senão",
@@ -361,7 +362,7 @@ local TEXTES = {
         de_t = "開始", de_d = "ルールが動作する時刻", a_t = "終了", a_d = "この時刻を過ぎると、ルールは翌日に向けて再び待機します",
         tenue_t = "実行：服装", tenue_d = "着用する服装プリセット", laisser = "変更しない", profil = "プリセット %d",
         endroit_t = "実行：移動先", endroit_d = "移動する場所", activite_t = "実行：行動", activite_d = "そこで行うアクティビティ",
-        avance_t = "詳細機能", avance_d = "その他の条件、内装、音楽、ルールの終了、それ以外の場合",
+        avance_t = "詳細機能", avance_d = "その他の条件、内装、音楽、時間帯、ルールの終了、それ以外の場合",
         journee = "終日", jours_t = "曜日", jours_d = "ルールが動作できる曜日", tous_jours = "毎日", semaine = "月曜から金曜", weekend = "週末",
         jour_noms = { "日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日" },
         essayer_t = "このルールを試す", essayer_d = "オプションを閉じ、条件に関係なく今すぐ実行します", essayer_rien = "—", essayer_alors = "試す：実行", essayer_sinon = "試す：それ以外",
@@ -383,7 +384,7 @@ local TEXTES = {
         de_t = "开始时间", de_d = "规则执行的时间", a_t = "结束时间", a_d = "过了这个时间，规则会为第二天重新就绪",
         tenue_t = "则：服装", tenue_d = "要穿的服装预设", laisser = "不更改", profil = "预设 %d",
         endroit_t = "则：前往", endroit_d = "要前往的地点", activite_t = "则：进行", activite_d = "在那里进行的活动",
-        avance_t = "高级功能", avance_d = "其他条件、装饰、音乐、规则结束和否则",
+        avance_t = "高级功能", avance_d = "其他条件、装饰、音乐、时段、规则结束和否则",
         journee = "全天", jours_t = "日期", jours_d = "规则可以执行的日子", tous_jours = "每天", semaine = "周一至周五", weekend = "周末",
         jour_noms = { "星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六" },
         essayer_t = "试用此规则", essayer_d = "关闭选项并立即执行，不管条件如何", essayer_rien = "—", essayer_alors = "试用：则", essayer_sinon = "试用：否则",
@@ -405,7 +406,7 @@ local TEXTES = {
         de_t = "시작", de_d = "규칙이 작동하는 시각", a_t = "종료", a_d = "이 시각이 지나면 규칙은 다음 날을 위해 다시 준비됩니다",
         tenue_t = "실행: 의상", tenue_d = "입을 의상 프리셋", laisser = "변경 안 함", profil = "프리셋 %d",
         endroit_t = "실행: 이동", endroit_d = "이동할 장소", activite_t = "실행: 활동", activite_d = "그곳에서 할 활동",
-        avance_t = "고급 기능", avance_d = "다른 조건, 인테리어, 음악, 규칙 종료, 그렇지 않으면",
+        avance_t = "고급 기능", avance_d = "다른 조건, 인테리어, 음악, 시간대, 규칙 종료, 그렇지 않으면",
         journee = "하루 종일", jours_t = "요일", jours_d = "규칙이 작동할 수 있는 요일", tous_jours = "매일", semaine = "월요일부터 금요일", weekend = "주말",
         jour_noms = { "일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일" },
         essayer_t = "이 규칙 시험", essayer_d = "옵션을 닫고 조건과 상관없이 바로 실행합니다", essayer_rien = "—", essayer_alors = "시험: 실행", essayer_sinon = "시험: 그렇지 않으면",
@@ -427,7 +428,7 @@ local TEXTES = {
         de_t = "С", de_d = "Время, когда срабатывает правило", a_t = "До", a_d = "После этого времени правило снова готово на следующий день",
         tenue_t = "Тогда: одежда", tenue_d = "Какой профиль одежды надеть", laisser = "Не менять", profil = "Профиль %d",
         endroit_t = "Тогда: перейти", endroit_d = "Куда перейти", activite_t = "Тогда: занятие", activite_d = "Чем заняться там",
-        avance_t = "Расширенные функции", avance_d = "Другие условия, обстановка, музыка, конец правила и иначе",
+        avance_t = "Расширенные функции", avance_d = "Другие условия, обстановка, музыка, время суток, конец правила и иначе",
         journee = "Весь день", jours_t = "Дни", jours_d = "Дни, когда правило может срабатывать", tous_jours = "Каждый день", semaine = "С понедельника по пятницу", weekend = "Выходные",
         jour_noms = { "Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота" },
         essayer_t = "Проверить правило", essayer_d = "Закрывает настройки и выполняет сейчас, какими бы ни были условия", essayer_rien = "—", essayer_alors = "Проверить: тогда", essayer_sinon = "Проверить: иначе",
@@ -570,6 +571,24 @@ do
         for cle, valeur in pairs(textes) do TEXTES[code][cle] = valeur end
     end
 end
+-- The game's time of day: one of its four, or the one that matches the real time when the step runs. The four keep the game's own names.
+do
+    local MOMENTS = {
+        en = { moment_t = "Then: time of day", moment_d = "The game's time of day, like its own selector. Match the real time picks the one that fits the time on your PC", s_moment_t = "Else: time of day", moment_auto = "Match the real time", moment_nom = "Time of day %d" },
+        fr = { moment_t = "Alors : moment de la journée", moment_d = "Le moment de la journée du jeu, comme son propre sélecteur. Selon l'heure réelle prend celui qui va avec l'heure de votre PC", s_moment_t = "Sinon : moment de la journée", moment_auto = "Selon l'heure réelle", moment_nom = "Moment %d" },
+        it = { moment_t = "Allora: momento della giornata", moment_d = "Il momento della giornata nel gioco, come il suo selettore. Secondo l'ora reale sceglie quello adatto all'ora del tuo PC", s_moment_t = "Altrimenti: momento della giornata", moment_auto = "Secondo l'ora reale", moment_nom = "Momento %d" },
+        de = { moment_t = "Dann: Tageszeit", moment_d = "Die Tageszeit im Spiel, wie in seiner eigenen Auswahl. Nach echter Uhrzeit nimmt die, die zur Uhrzeit deines PCs passt", s_moment_t = "Sonst: Tageszeit", moment_auto = "Nach echter Uhrzeit", moment_nom = "Tageszeit %d" },
+        es = { moment_t = "Entonces: momento del día", moment_d = "El momento del día en el juego, como su propio selector. Según la hora real elige el que va con la hora de tu PC", s_moment_t = "Si no: momento del día", moment_auto = "Según la hora real", moment_nom = "Momento %d" },
+        pt = { moment_t = "Então: momento do dia", moment_d = "O momento do dia no jogo, como o seu próprio seletor. Conforme o horário real escolhe o que combina com a hora do seu PC", s_moment_t = "Senão: momento do dia", moment_auto = "Conforme o horário real", moment_nom = "Momento %d" },
+        ja = { moment_t = "実行：時間帯", moment_d = "ゲーム内の時間帯（ゲームの選択画面と同じ）。「現実の時刻に合わせる」はPCの時刻に合うものを選びます", s_moment_t = "それ以外：時間帯", moment_auto = "現実の時刻に合わせる", moment_nom = "時間帯 %d" },
+        zh = { moment_t = "则：时段", moment_d = "游戏内的时段，与游戏自带的选择器相同。“按真实时间”会选择与电脑时间相符的时段", s_moment_t = "否则：时段", moment_auto = "按真实时间", moment_nom = "时段 %d" },
+        ko = { moment_t = "실행: 시간대", moment_d = "게임 속 시간대(게임의 선택기와 같음). '실제 시간에 맞춤'은 PC 시간에 맞는 시간대를 고릅니다", s_moment_t = "그렇지 않으면: 시간대", moment_auto = "실제 시간에 맞춤", moment_nom = "시간대 %d" },
+        ru = { moment_t = "Тогда: время суток", moment_d = "Время суток в игре, как в её собственном выборе. «По реальному времени» выбирает то, что подходит ко времени на вашем ПК", s_moment_t = "Иначе: время суток", moment_auto = "По реальному времени", moment_nom = "Время суток %d" },
+    }
+    for code, textes in pairs(MOMENTS) do
+        for cle, valeur in pairs(textes) do TEXTES[code][cle] = valeur end
+    end
+end
 -- A language missing a text falls back on English, one text at a time.
 for code, table_langue in pairs(TEXTES) do
     if code ~= "en" then setmetatable(table_langue, { __index = TEXTES.en }) end
@@ -672,6 +691,7 @@ local function poser_textes()
     regler_textes(l.s_attente, t.attente_t, t.attente_d)
     regler_textes(l.s_decor, t.s_decor_t, t.decor_d)
     regler_textes(l.s_musique, t.s_musique_t, t.musique_d)
+    regler_textes(l.s_moment, t.s_moment_t, t.moment_d)
     regler_textes(l.s_retirer, t.retirer_e_t, t.retirer_e_d)
     regler_textes(l.jours, t.jours_t, t.jours_d)
     regler_textes(l.essayer, t.essayer_t, t.essayer_d)
@@ -680,6 +700,7 @@ local function poser_textes()
     regler_textes(l.musique_si, t.musique_si_t, t.musique_si_d)
     regler_textes(l.decor, t.decor_t, t.decor_d)
     regler_textes(l.musique, t.musique_t, t.musique_d)
+    regler_textes(l.moment, t.moment_t, t.moment_d)
     regler_textes(l.avance, t.avance_t, t.avance_d)
     regler_textes(l.sens, t.sens_t, t.sens_d)
     regler_textes(l.fin, t.fin_t, t.fin_d)
@@ -727,7 +748,7 @@ local function creer_onglet(p)
     MENU.page = page
 
     local l = MENU.lignes
-    for _, nom_ligne in ipairs({ "regle", "actif", "condition", "de", "a", "jours", "appli", "appli_plan", "appli_ecran", "annee", "pomodoro", "musique_si", "retirer_c", "etape", "attente", "tenue", "endroit", "activite", "decor", "musique", "retirer_e", "essayer", "avance", "sens", "fin", "s_etape", "s_attente", "s_tenue", "s_endroit", "s_activite", "s_decor", "s_musique", "s_retirer", "suppr" }) do
+    for _, nom_ligne in ipairs({ "regle", "actif", "condition", "de", "a", "jours", "appli", "appli_plan", "appli_ecran", "annee", "pomodoro", "musique_si", "retirer_c", "etape", "attente", "tenue", "endroit", "activite", "decor", "musique", "moment", "retirer_e", "essayer", "avance", "sens", "fin", "s_etape", "s_attente", "s_tenue", "s_endroit", "s_activite", "s_decor", "s_musique", "s_moment", "s_retirer", "suppr" }) do
         l[nom_ligne] = creer_ligne(p, modele, section)
     end
     poser_textes()
@@ -877,6 +898,37 @@ local function paires_profils(nombre)
     return p
 end
 
+-- The game's four times of day, read from the buttons of its own selector in the HUD: { value, name in the game's language, button }.
+-- Values seen in game: 0 morning, 1 afternoon, 2 evening, 3 night.
+local BOUTONS_MOMENT = { "Button_Morning", "Button_Afternoon", "Button_Evening", "Button_Night" }
+local MOMENTS_LUS = { liste = {}, jusqua = -1 }
+local function moments_du_jeu()
+    local t = os.clock()
+    if t < MOMENTS_LUS.jusqua then return MOMENTS_LUS.liste end
+    local trouves = {}
+    pcall(function()
+        local selecteur = hud().UI_TimeofDaySelector
+        for _, nom_bouton in ipairs(BOUTONS_MOMENT) do
+            local b = selecteur[nom_bouton]
+            if valide(b) then
+                local nom = nil
+                pcall(function() nom = b.TextToDisplay:ToString() end)
+                trouves[#trouves + 1] = { valeur = b.TimeOfDay, nom = (nom ~= nil and nom ~= "") and nom or nil, bouton = b }
+            end
+        end
+    end)
+    table.sort(trouves, function(x, y) return x.valeur < y.valeur end)
+    MOMENTS_LUS.liste, MOMENTS_LUS.jusqua = trouves, t + (#trouves > 0 and 5 or 1)
+    return trouves
+end
+
+local function paires_moments()
+    local t = MENU.texte
+    local p = { { t.laisser, "" }, { t.moment_auto, "auto" } }
+    for i, m in ipairs(moments_du_jeu()) do p[#p + 1] = { m.nom or string.format(t.moment_nom, i), tostring(m.valeur) } end
+    return p
+end
+
 local function paires_endroits()
     local t = MENU.texte
     local p = { { t.laisser, "" } }
@@ -933,7 +985,7 @@ local function regle_avancee(r)
         if rempli(c.annee) or rempli(c.pomodoro) or rempli(c.musique) then return true end
     end
     for _, e in ipairs(r.alors) do
-        if rempli(e.decor) or rempli(e.musique) then return true end
+        if rempli(e.decor) or rempli(e.musique) or rempli(e.moment) then return true end
     end
     return false
 end
@@ -994,7 +1046,7 @@ end
 local function suivre_etapes(l, r, liste, cle_index, n, visible, t, peut_etre_vide)
     montrer(l[n.etape], visible)
     if not visible then
-        for _, nom in ipairs({ n.attente, n.tenue, n.endroit, n.activite, n.decor, n.musique, n.retirer }) do montrer(l[nom], false) end
+        for _, nom in ipairs({ n.attente, n.tenue, n.endroit, n.activite, n.decor, n.musique, n.moment, n.retirer }) do montrer(l[nom], false) end
         return false
     end
     local change = false
@@ -1007,6 +1059,7 @@ local function suivre_etapes(l, r, liste, cle_index, n, visible, t, peut_etre_vi
     montrer(l[n.endroit], e ~= nil)
     montrer(l[n.decor], e ~= nil and MENU.avance)
     montrer(l[n.musique], e ~= nil and MENU.avance)
+    montrer(l[n.moment], e ~= nil and MENU.avance)
     montrer(l[n.retirer], e ~= nil and (peut_etre_vide or #liste > 1))
     if not e then
         montrer(l[n.activite], false)
@@ -1025,6 +1078,7 @@ local function suivre_etapes(l, r, liste, cle_index, n, visible, t, peut_etre_vi
     if MENU.avance then
         if ligne_fixe(l[n.decor], e, "decor", paires_profils(NOMBRE_DECORS)) then change = true end
         if ligne_fixe(l[n.musique], e, "musique", { { t.laisser, "" }, { t.m_lecture, "lecture" }, { t.m_pause, "pause" }, { t.m_suivante, "suivante" } }) then change = true end
+        if ligne_fixe(l[n.moment], e, "moment", paires_moments()) then change = true end
     end
     if ligne_retirer(l[n.retirer]) then
         table.remove(liste, index)
@@ -1035,8 +1089,8 @@ local function suivre_etapes(l, r, liste, cle_index, n, visible, t, peut_etre_vi
     return change
 end
 
-local NOMS_ALORS = { etape = "etape", attente = "attente", tenue = "tenue", endroit = "endroit", activite = "activite", decor = "decor", musique = "musique", retirer = "retirer_e" }
-local NOMS_SINON = { etape = "s_etape", attente = "s_attente", tenue = "s_tenue", endroit = "s_endroit", activite = "s_activite", decor = "s_decor", musique = "s_musique", retirer = "s_retirer" }
+local NOMS_ALORS = { etape = "etape", attente = "attente", tenue = "tenue", endroit = "endroit", activite = "activite", decor = "decor", musique = "musique", moment = "moment", retirer = "retirer_e" }
+local NOMS_SINON = { etape = "s_etape", attente = "s_attente", tenue = "s_tenue", endroit = "s_endroit", activite = "s_activite", decor = "s_decor", musique = "s_musique", moment = "s_moment", retirer = "s_retirer" }
 
 local function suivre_page()
     local l = MENU.lignes
@@ -1413,15 +1467,32 @@ local function programmer(r, etapes, essai)
         end
         FILE[#FILE + 1] = {
             quand = quand, regle = r, essai = essai,
-            profil = e.profil, rang = rempli(e.endroit) and e.activite or "", decor = e.decor, musique = e.musique,
+            profil = e.profil, rang = rempli(e.endroit) and e.activite or "", decor = e.decor, musique = e.musique, moment = e.moment,
         }
     end
 end
 
 local function effacer_suivi(r)
     r.en_cours = "0"
-    r.avant_profil, r.avant_rang, r.avant_decor, r.avant_musique = "", "", "", ""
-    r.pose_profil, r.pose_rang, r.pose_decor, r.pose_musique = "", "", "", ""
+    r.avant_profil, r.avant_rang, r.avant_decor, r.avant_musique, r.avant_moment = "", "", "", "", ""
+    r.pose_profil, r.pose_rang, r.pose_decor, r.pose_musique, r.pose_moment = "", "", "", "", ""
+end
+
+-- The game's time of day now, as its number. "" if the game cannot say.
+local function moment_actuel()
+    local ok, v = pcall(function() return tostring(gestion_moment().CurrentTimeOfDay) end)
+    return ok and v or ""
+end
+
+-- The time of day that matches the real time, by the game's own rule (a pure calculation: 6-12 morning, 12-18 afternoon, 18-22 evening, else night).
+local function moment_de_l_heure()
+    local ok, v = pcall(function()
+        local g = gestion_moment()
+        local sortie = {}
+        g["Determine time of day"](g, StaticFindObject("/Script/Engine.Default__KismetMathLibrary"):Now(), sortie)
+        return tostring(sortie.TimeOfDay)
+    end)
+    return ok and v or ""
 end
 
 local function evaluer_regles()
@@ -1457,13 +1528,14 @@ local function evaluer_regles()
         rang = gestion_lieu().CurrentActivityData.RowName:ToString(),
         decor = tostring(hud().REF_RoomCustomizationManager["Current Preset ID"]),
         musique = musique_joue() and "lecture" or "pause",
+        moment = moment_actuel(),
     }
     -- What starts goes before what ends, and rules higher in the list go first.
     for _, r in ipairs(montantes) do
         annuler_regle(r)
         if r.en_cours ~= "1" then
-            r.avant_profil, r.avant_rang, r.avant_decor, r.avant_musique = etat.profil, etat.rang, etat.decor, etat.musique
-            r.pose_profil, r.pose_rang, r.pose_decor, r.pose_musique = "", "", "", ""
+            r.avant_profil, r.avant_rang, r.avant_decor, r.avant_musique, r.avant_moment = etat.profil, etat.rang, etat.decor, etat.musique, etat.moment
+            r.pose_profil, r.pose_rang, r.pose_decor, r.pose_musique, r.pose_moment = "", "", "", "", ""
         end
         r.en_cours = "1"
         programmer(r, r.alors, false)
@@ -1476,11 +1548,12 @@ local function evaluer_regles()
         programmer(r, r.sinon, false)
         if r.en_cours == "1" and r.fin == "avant" then
             -- Only what the rule set and the player has not changed since. After a restart no activity is running yet: that is not the player's doing.
-            local retour = { quand = os.clock(), regle = r, retour = true, profil = "", rang = "", decor = "", musique = "" }
+            local retour = { quand = os.clock(), regle = r, retour = true, profil = "", rang = "", decor = "", musique = "", moment = "" }
             if rempli(r.pose_profil) and r.pose_profil == etat.profil then retour.profil = r.avant_profil end
             if rempli(r.pose_rang) and (r.pose_rang == etat.rang or apres_relance) and r.avant_rang ~= "None" then retour.rang = r.avant_rang end
             if rempli(r.pose_decor) and r.pose_decor == etat.decor then retour.decor = r.avant_decor end
             if rempli(r.pose_musique) and r.pose_musique == etat.musique then retour.musique = r.avant_musique end
+            if rempli(r.pose_moment) and r.pose_moment == etat.moment then retour.moment = r.avant_moment end
             FILE[#FILE + 1] = retour
         end
         effacer_suivi(r)
@@ -1511,7 +1584,9 @@ local function lancer_ce_qui_est_du()
     local maj = false
     for _, entree in ipairs(FILE) do
         if entree.quand <= t then
-            for _, champ in ipairs({ "profil", "rang", "decor", "musique" }) do
+            -- "Real time" becomes the time of day of this very moment.
+            if entree.moment == "auto" then entree.moment = moment_de_l_heure() end
+            for _, champ in ipairs({ "profil", "rang", "decor", "musique", "moment" }) do
                 -- "Put things back" only fills what nothing else decided: else goes first, even in the same rule.
                 if rempli(entree[champ]) and (cible[champ] == nil or (par_regle[champ] == entree.regle and not entree.retour)) then
                     cible[champ] = entree[champ]
@@ -1532,13 +1607,13 @@ local function lancer_ce_qui_est_du()
     end
     FILE = gardees
     if maj then ecrire_regles() end
-    if cible.profil or cible.rang or cible.decor or cible.musique then
+    if cible.profil or cible.rang or cible.decor or cible.musique or cible.moment then
         ACTIONS_RECENTES[#ACTIONS_RECENTES + 1] = t
         ACTION = {
             etape = "carte", profil = tonumber(cible.profil), rang = cible.rang, endroit = cible.rang and endroit_du_rang(cible.rang) or "",
-            decor = tonumber(cible.decor), musique = cible.musique, depuis = t,
+            decor = tonumber(cible.decor), musique = cible.musique, moment = cible.moment, depuis = t,
         }
-        journal("action : profil " .. tostring(cible.profil) .. ", activite " .. tostring(cible.rang) .. ", decor " .. tostring(cible.decor) .. ", musique " .. tostring(cible.musique))
+        journal("action : profil " .. tostring(cible.profil) .. ", activite " .. tostring(cible.rang) .. ", decor " .. tostring(cible.decor) .. ", musique " .. tostring(cible.musique) .. ", moment " .. tostring(cible.moment))
     end
 end
 
@@ -1587,6 +1662,19 @@ local function appel_par_minuterie(objet, fonction)
     StaticFindObject("/Script/Engine.Default__KismetSystemLibrary"):K2_SetTimer(objet, fonction, 0.01, false, false, 0.0, 0.0)
 end
 
+-- Presses the game's own time-of-day button, as the player would. Returns false when there is no button to press.
+local function appuyer_moment(voulu)
+    for _, m in ipairs(moments_du_jeu()) do
+        if tostring(m.valeur) == voulu and valide(m.bouton) then
+            local b = m.bouton.WBP_BaseButton_Simple
+            if not valide(b) then return false end
+            appel_par_minuterie(b, "EvSimulatePress")
+            return true
+        end
+    end
+    return false
+end
+
 local function regler_musique(voulu)
     local lecteur = hud().UI_MusicPlayer
     if voulu == "suivante" then
@@ -1624,7 +1712,7 @@ local function pas_action()
         a.etape = "decor"
         a.attendre_jusqua = t + 3  -- the new map's avatars settle
     elseif a.etape == "decor" then
-        a.etape = "profil"
+        a.etape = "moment"
         if a.decor then
             local gestion = hud().REF_RoomCustomizationManager
             if valide(gestion) and gestion["Current Preset ID"] ~= a.decor then
@@ -1641,9 +1729,26 @@ local function pas_action()
     elseif a.etape == "attente_decor" then
         local gestion = hud().REF_RoomCustomizationManager
         if valide(gestion) and gestion["Current Preset ID"] == a.decor then
-            a.etape = "profil"
+            a.etape = "moment"
         elseif t - a.decor_depuis > 10 then
             journal("le decor n'a pas change")
+            a.etape = "moment"
+        end
+    elseif a.etape == "moment" then
+        a.etape = "profil"
+        if rempli(a.moment) and moment_actuel() ~= a.moment then
+            if appuyer_moment(a.moment) then
+                a.etape = "attente_moment"
+                a.moment_depuis = t
+            else
+                journal("pas de bouton pour le moment " .. a.moment)
+            end
+        end
+    elseif a.etape == "attente_moment" then
+        if moment_actuel() == a.moment then
+            a.etape = "profil"
+        elseif t - a.moment_depuis > 10 then
+            journal("le moment de la journee n'a pas change")
             a.etape = "profil"
         end
     elseif a.etape == "profil" then

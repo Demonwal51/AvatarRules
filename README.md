@@ -27,10 +27,11 @@ Then: one or several steps, done in order, with a wait of up to two hours betwee
 - Go to a place and do an activity, on any map you own
 - Use one of your decor presets
 - Music: play, pause or next track
+- Time of day: morning, afternoon, evening or night, or the one that matches the real time
 
 "Try this rule" does it right now, without waiting for the conditions.
 
-To keep the menu short, the time of year, the Pomodoro, the music and the decor are behind one line, Advanced functions, along with:
+To keep the menu short, the time of year, the Pomodoro, the music, the decor and the time of day are behind one line, Advanced functions, along with:
 
 - Invert the condition: "if it is not true"
 - Else: other steps, for when the condition is not true
@@ -78,6 +79,7 @@ Prefer not to run them? Copy the content of `files\game` into the game folder yo
 - If rules keep undoing each other, the mod stops after 10 actions in a minute, then carries on.
 - The game itself refuses activities that are not unlocked yet: nothing is forced. Places from a DLC you do not own are not offered.
 - Seasons are those of the northern half of the world. Months work everywhere.
+- The time of day is changed with the game's own buttons. "Match the real time" picks, when the step runs, the one that fits your PC's time, by the game's own hours: 6 to 12 morning, 12 to 18 afternoon, 18 to 22 evening, otherwise night.
 - In front means in front of the other windows on its screen, even if you are using another screen. In the background means behind another window, or minimized. A minimized window counts on the screen it goes back to. An application with no visible window, for example one that only sits in the tray, is not seen. Screen numbers are those of Windows.
 - Works alone or with Real Screen: neither needs the other. A rule that goes to Gaming also starts Real Screen's picture, since Real Screen follows the game's activity.
 
@@ -89,7 +91,7 @@ The DLL exists because a Lua script cannot see other windows. When a rule needs 
 
 Antivirus programs may distrust a new unsigned DLL, and Nexus may hold the file for review. That is not a verdict: you can read the code, or look up the file on VirusTotal.
 
-The mod also reads the clock and the state of the game. It writes only its rules (regles.txt), the window list (fenetres.txt) and a log (journal.txt) in its own folder. To change an outfit or a decor it presses the game's own buttons, so the game saves the choice as it always does. Save files were compared after testing: only the number of the current preset had changed.
+The mod also reads the clock and the state of the game. It writes only its rules (regles.txt), the window list (fenetres.txt) and a log (journal.txt) in its own folder. To change an outfit, a decor or the time of day it presses the game's own buttons, so the game saves the choice as it always does. Save files were compared after testing: only the number of the current preset had changed.
 
 Anti-cheat: the mod loads into Spirit City only and touches no other game, but it has not been checked against anti-cheat systems. Use it at your own risk.
 
@@ -147,10 +149,11 @@ Alors : une ou plusieurs étapes, faites dans l'ordre, avec une attente jusqu'à
 - Aller à un endroit et y faire une activité, sur toute carte que vous possédez
 - Utiliser un de vos profils de décor
 - Musique : lecture, pause ou piste suivante
+- Moment de la journée : matin, après-midi, soirée ou nuit, ou celui qui va avec l'heure réelle
 
 « Essayer cette règle » le fait tout de suite, sans attendre les conditions.
 
-Pour garder un menu court, le moment de l'année, le Pomodoro, la musique et le décor sont derrière une ligne, Fonctions avancées, avec :
+Pour garder un menu court, le moment de l'année, le Pomodoro, la musique, le décor et le moment de la journée sont derrière une ligne, Fonctions avancées, avec :
 
 - Inverser la condition : « si ce n'est pas vrai »
 - Sinon : d'autres étapes, pour quand la condition n'est pas vraie
@@ -198,6 +201,7 @@ Vous préférez ne pas les lancer ? Copiez vous-même le contenu de `files\game`
 - Si des règles se défont sans fin, le mod s'arrête après 10 actions en une minute, puis reprend.
 - Le jeu refuse lui-même les activités pas encore débloquées : rien n'est forcé. Les endroits d'un DLC que vous n'avez pas ne sont pas proposés.
 - Les saisons sont celles de l'hémisphère nord. Les mois marchent partout.
+- Le moment de la journée est changé avec les boutons du jeu. « Selon l'heure réelle » prend, au moment où l'étape agit, celui qui va avec l'heure de votre PC, selon les heures du jeu : de 6 à 12 h le matin, de 12 à 18 h l'après-midi, de 18 à 22 h la soirée, sinon la nuit.
 - Au premier plan veut dire devant les autres fenêtres de son écran, même si vous utilisez un autre écran. En arrière-plan veut dire derrière une autre fenêtre, ou réduite. Une fenêtre réduite compte sur l'écran où elle reviendra. Une application sans fenêtre visible, par exemple dans la zone de notification, n'est pas vue. Les numéros d'écran sont ceux de Windows.
 - Marche seul ou avec Real Screen : aucun des deux n'a besoin de l'autre. Une règle qui va à Jouer lance aussi l'image de Real Screen, puisque Real Screen suit l'activité du jeu.
 
@@ -209,7 +213,7 @@ La DLL existe parce qu'un script Lua ne voit pas les autres fenêtres. Quand une
 
 Un antivirus peut se méfier d'une DLL neuve non signée, et Nexus peut retenir le fichier pour vérification. Ce n'est pas un verdict : vous pouvez lire le code ou chercher le fichier sur VirusTotal.
 
-Le mod lit aussi l'horloge et l'état du jeu. Il n'écrit que ses règles (regles.txt), la liste des fenêtres (fenetres.txt) et un journal (journal.txt) dans son propre dossier. Pour changer une tenue ou un décor, il appuie sur les boutons du jeu : le jeu enregistre donc le choix comme d'habitude. Les fichiers de sauvegarde ont été comparés après les essais : seul le numéro du profil en cours avait changé.
+Le mod lit aussi l'horloge et l'état du jeu. Il n'écrit que ses règles (regles.txt), la liste des fenêtres (fenetres.txt) et un journal (journal.txt) dans son propre dossier. Pour changer une tenue, un décor ou le moment de la journée, il appuie sur les boutons du jeu : le jeu enregistre donc le choix comme d'habitude. Les fichiers de sauvegarde ont été comparés après les essais : seul le numéro du profil en cours avait changé.
 
 Anti-triche : le mod se charge dans Spirit City seulement et ne touche à aucun autre jeu, mais il n'a pas été vérifié face aux systèmes anti-triche. Utilisation à vos risques.
 
